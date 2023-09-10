@@ -4,8 +4,9 @@ Created on Sun Jul 30 11:17:50 2023
 
 @author: USER
 """
-from tools import get_soup
 import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 
 url = "https://www.railway.gov.tw/tra-tip-web/tip"
 api_url = "https://www.railway.gov.tw/tra-tip-web/tip/tip001/tip112/querybytime"
@@ -21,6 +22,28 @@ form_data = {
     "startTime": "12:00",
     "endTime": "23:59",
 }
+
+user_agent = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+}
+
+
+def get_soup(url, form_data=None):
+    try:
+        if form_data is not None:
+            resp = requests.post(url, form_data, headers=user_agent)
+        else:
+            resp = requests.get(url, headers=user_agent)
+        if resp.status_code != 200:
+            print("讀取網頁失敗!", resp.status_code)
+        else:
+            soup = BeautifulSoup(resp.text, "lxml")
+            return soup
+
+    except Exception as e:
+        print(e)
+
+    return None
 
 
 def get_stations():
