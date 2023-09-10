@@ -21,7 +21,7 @@ def get_big_lottory():
         numbers = trs[4].text.strip().split()[1:]
         big_lottory = ",".join(numbers[:-1]) + f"特別號{numbers[-1]}"
         date = "，".join(trs[1].text.strip().split()[:2])
-        result = f"期數/日期:\n{date}\n號碼{big_lottory}"
+        result = f"期個數/日期:\n{date}\n號碼{big_lottory}"
         return result
     except Exception as e:
         print(e)
