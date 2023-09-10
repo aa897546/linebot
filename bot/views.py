@@ -5,7 +5,7 @@ from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbid
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime
 from crawler.main import get_big_lottory  # , get_invoice_matching
-from crawler.train import get_stations, get_train_data
+from crawler.train import get_stations, get_train_data2
 
 # Create your views here.
 
@@ -23,6 +23,8 @@ line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parse = WebhookParser(settings.LINE_CHANNEL_SECRET)
 
 menu_str = ""
+train_str = ""
+stations = {}
 
 
 def index(request):
@@ -32,8 +34,8 @@ def index(request):
 
 
 def get_menu():
-    global menu_str
-    if menu_str is "":
+    global menu_str, stations
+    if menu_str == "":
         stations = get_stations()
         menu = {i + 1: station for i, station in enumerate(stations)}
         count = 0
@@ -49,7 +51,7 @@ def get_menu():
 # Create your views here.
 @csrf_exempt  # 安全跨域請求機制
 def callback(request):
-    global menu_str
+    global menu_str, stations
     get_menu()
     print(menu_str)
 
@@ -66,9 +68,23 @@ def callback(request):
             if isinstance(event, MessageEvent):
                 text = event.message.text
                 print(text)
-
-                message = TextSendMessage(text=menu_str)
-                line_bot_api.reply_message(event.reply_token, message)
+                if text == "1":
+                    text = menu_str
+                if text == "2":
+                    text = get_train_data2(
+                        stations["臺北"], stations["基隆"], "2023/9/10", "00:00", "23:59"
+                    )
+                    print(text)
+                if text == "3":
+                    text = get_train_data2(
+                        stations["臺北"], stations["基隆"], "2023/9/10", "00:00", "23:59"
+                    )
+                    print(text)
+                message = TextSendMessage(text=text)
+                try:
+                    line_bot_api.reply_message(event.reply_token, message)
+                except Exception as e:
+                    print(e)
         return HttpResponse()
     else:
         return HttpResponseBadRequest()
