@@ -84,9 +84,7 @@ def get_train_data(
     return df
 
 
-def get_train_data2(
-    startStation, endStation, rideDate, startTime, endTime, ticket=False
-):
+def get_train_data2(startStation, endStation, rideDate, startTime, endTime=False):
     soup = get_soup(url)
     crsf_code = soup.find(id="queryForm").find("input").get("value")
     form_data["startStation"] = startStation

@@ -24,7 +24,9 @@ parse = WebhookParser(settings.LINE_CHANNEL_SECRET)
 
 menu_str = ""
 train_str = ""
-stations = {}
+menu, stations = {}, {}
+step = 0
+startStation, endStation, rideDate, startTime, endTime = "", "", "", "", ""
 
 
 def index(request):
@@ -34,7 +36,7 @@ def index(request):
 
 
 def get_menu():
-    global menu_str, stations
+    global menu, menu_str, stations
     if menu_str == "":
         stations = get_stations()
         menu = {i + 1: station for i, station in enumerate(stations)}
@@ -51,7 +53,7 @@ def get_menu():
 # Create your views here.
 @csrf_exempt  # 安全跨域請求機制
 def callback(request):
-    global menu_str, stations
+    global menu, menu_str, stations, step, startStation, endStation, rideDate, startTime, endTime
     get_menu()
     print(menu_str)
 
@@ -68,19 +70,57 @@ def callback(request):
             if isinstance(event, MessageEvent):
                 text = event.message.text
                 print(text)
-                if text == "1":
-                    text = menu_str
-                if text == "2":
-                    text = get_train_data2(
-                        stations["臺北"], stations["基隆"], "2023/9/10", "00:00", "23:59"
-                    )
-                    print(text)
-                if text == "3":
-                    text = get_train_data2(
-                        stations["臺北"], stations["基隆"], "2023/9/10", "00:00", "23:59"
-                    )
-                    print(text)
+                try:
+                    if text == "exit":
+                        text = "感謝您的使用!(start:重新查詢)"
+                        step = 0
+                    if text == "start" and step == 0:
+                        text = menu_str + "\n請輸入起始站點:"
+                        step += 1
+                    elif step == 1:
+                        startStation = menu[eval(text)]
+                        text = f"起始站: {startStation} \n請輸入終止站:"
+                        step += 1
+                    elif step == 2:
+                        endStation = menu[eval(text)]
+                        text = f"起始站:{startStation} 終止站: {endStation} \n請輸入乘車日期:(.:今日)"
+                        step += 1
+                    elif step == 3:
+                        print(step)
+                        if text == ".":
+                            rideDate = datetime.now().strftime("%Y/%m/%d")
+                        else:
+                            rideDate = text
+                        text = f"起始站:{startStation} 終止站: {endStation} \n乘車日期: {rideDate} \n請輸入查詢起始時間:(.:現在時間)"
+                        step += 1
+                    elif step == 4:
+                        if text == ".":
+                            startTime = datetime.now().strftime("%H:%M")
+                        else:
+                            startTime = text
+                        text = f"起始站:{startStation} 終止站: {endStation}\n乘車日期: {rideDate} \n起始時間: {startTime} \n請輸入查詢終止時間:(.:23:59)"
+                        step += 1
+                    elif step == 5:
+                        if text == ".":
+                            endTime = "23:59"
+                        else:
+                            endTime = text
+                        text = get_train_data2(
+                            stations[startStation],
+                            stations[endStation],
+                            rideDate,
+                            startTime,
+                            endTime,
+                        )
+                        print(text)
+                        text += "\n感謝您的使用!(start:重新查詢)"
+                        step = 0
+                except Exception as e:
+                    print(e)
+                    text = "輸入不正確,請重新輸入"
+
                 message = TextSendMessage(text=text)
+
                 try:
                     line_bot_api.reply_message(event.reply_token, message)
                 except Exception as e:
